@@ -1,0 +1,25 @@
+experiments/
+resources/
+log/
+outputs/
+playground.py
+data/
+
+# IPython Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# virtualenv
+venv/
+
+# Mac
+.DS_Store
+
+# model cache
+__pycache__/
+*.pt
+
+# pycharm
+.idea
