@@ -32,12 +32,12 @@ class SemEval14Data:
 
     @property
     def aspect_categories(self):
-        return self._aspect_terms
+        return self._aspect_categories
 
     @aspect_categories.setter
     def aspect_categories(self, value):
         assert isinstance(value, list)
-        self_aspect_categories = value
+        self._aspect_categories = value
 
 # SemEval Aspect Term Extraction
 class SemEval14Handler(xml.sax.ContentHandler):

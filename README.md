@@ -9,18 +9,18 @@ A simple way for ABSA(Aspect Base Sentiment Analysis) research data preprocessin
 
 ### Demo Output:
 
-**SemEval 2014**
+* **SemEval 2014**
 ```text
->>> datafile: restaurants-trial.xml
+>>> datafile: data/restaurants-trial.xml
 -size: 100
 -datas[0] demo:
 	-.id: 813
 	-.text: All the appetizers and salads were fabulous, the steak was mouth watering and the pasta was delicious!!!
 	-.aspect_terms: [('appetizers', 'positive', (8, 18)), ('salads', 'positive', (23, 29)), ('steak', 'positive', (49, 54)), ('pasta', 'positive', (82, 87))]
-	-.aspect_categories: [('appetizers', 'positive', (8, 18)), ('salads', 'positive', (23, 29)), ('steak', 'positive', (49, 54)), ('pasta', 'positive', (82, 87))]
+	-.aspect_categories: [('food', 'positive')]
 ```
 
-**SemEval 2015**
+* **SemEval 2015**
 ```text
 >>> datafile: data/absa-2015_restaurants_trial.xml
 -size: 10
