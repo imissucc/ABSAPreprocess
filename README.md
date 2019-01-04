@@ -10,7 +10,10 @@ A simple way for ABSA(Aspect Base Sentiment Analysis) research data preprocessin
 ### Demo Output:
 
 * **SemEval 2014**
+
 ```text
+# SemEval14.py
+
 >>> datafile: data/restaurants-trial.xml
 -size: 100
 -datas[0] demo:
@@ -19,6 +22,16 @@ A simple way for ABSA(Aspect Base Sentiment Analysis) research data preprocessin
 	-.aspect_terms: [('appetizers', 'positive', (8, 18)), ('salads', 'positive', (23, 29)), ('steak', 'positive', (49, 54)), ('pasta', 'positive', (82, 87))]
 	-.aspect_categories: [('food', 'positive')]
 ```
+```text
+# SemEval14PP.py
+
+[['All the $BA$ and $BA$ were fabulous the $BA$ was mouth watering and the $BA$ was delicious', 'N N BA N BA N N N BA N N N N N BA N N', 'appetizers, salads, steak, pasta'],
+['And really large $BA$', 'N N N BA', 'portions'],
+["Go inside and you won't want to leave", 'N N N N N N N N', None],
+['Save yourself the time and trouble and skip this one', 'N N N N N N N N N N', None],
+['The $BA$ $IA$ was excellent as was the $BA$ $IA$ and the $BA$ $IA$ but the $BA$ was forgettable', 'N BA IA N N N N N BA IA N N BA IA N N BA N N', 'sweet lassi, lamb chettinad, garlic naan, rasamalai']]
+```
+
 
 * **SemEval 2015**
 ```text

@@ -3,6 +3,12 @@ import xml.sax
 
 class SemEval14Data:
 
+    def __init__(self):
+        self._id = None
+        self._text = None
+        self._aspect_categories = None
+        self._aspect_terms = None
+
     @property
     def id(self):
         return self._id
