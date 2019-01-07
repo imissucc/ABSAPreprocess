@@ -80,7 +80,7 @@ class SemEval15Handler(xml.sax.ContentHandler):
         elif tag == "Opinions":
             self.opinions = []
         elif tag == "Opinion":
-            self.opinions.append((attributes["target"], attributes["category"], attributes["polarity"], (attributes["from"], attributes["to"])))
+            self.opinions.append((attributes["target"], attributes["category"], attributes["polarity"], (int(attributes["from"]), int(attributes["to"]))))
 
     def characters(self, content):
 
