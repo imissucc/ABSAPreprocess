@@ -17,18 +17,25 @@ def aspect_term_replacement(text, opinions):
     pos = []
     for t in opinions:
         # t: (term, entity#attribute, polarity, (from, to))
-        aspect_term = t[0]
-        aspect_count = len(aspect_term.split())
-        ph = aspect_term_placeholder(count=aspect_count) # "$BA$ $IA$"
-        ph_terms.append(ph)
-        ap_terms.append(aspect_term)
-        categories.append(t[1])
-        pos.append(t[3])
+        aspect_term = t[0] # maybe == "NULL"
+        if aspect_term != "NULL":
+            aspect_count = len(aspect_term.split())
+            ph = aspect_term_placeholder(count=aspect_count) # "$BA$ $IA$"
+            ph_terms.append(ph)
+            ap_terms.append(aspect_term)
+            pos.append(t[3])
 
-    # phs: [(aspect_place_holder, (from, to))...]
-    new_text = replace_with_index(text, ph_terms, pos)
+        categories.append(t[1])
+
+    # if aspect_terms is not None
+    assert len(ph_terms) == len(ap_terms)
+    if len(ph_terms) > 0:
+        new_text = replace_with_index(text, ph_terms, pos)
+        ap_terms = ",".join(ap_terms)
+    else:
+        new_text = text
+        ap_terms = None
     categories = ",".join(set(categories))
-    ap_terms = ",".join(ap_terms)
 
     return new_text, ap_terms, categories
 
@@ -45,25 +52,16 @@ def SE15_ATEDataPrepare(file, rm_none_aspect):
             text = sentence.text
             opinions = sentence.opinions # [(term, entity#attribute, polarity, (from, to))]
 
-            if opinions is not None:
-                # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
-                new_text, ap_terms, ap_categories = aspect_term_replacement(text, opinions)
-                new_text = washer(new_text)
-                text_label = label_constructor(new_text)
+            # opinion is always exist
+            # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
+            new_text, ap_terms, ap_categories = aspect_term_replacement(text, opinions)
+            new_text = washer(new_text)
+            text_label = label_constructor(new_text)
 
-                outputs.append([new_text, text_label, ap_terms, ap_categories])
-
-            else:
-                if rm_none_aspect:
-                    pass
-                else:
-                    # don't have aspect terms
-                    ap_terms = None
-                    ap_categories = None
-                    new_text = washer(text)
-                    text_label = label_constructor(new_text)
-
-                    outputs.append([new_text, text_label, ap_terms, ap_categories])
+            # if ignore sentences without aspect
+            if rm_none_aspect and ap_terms is None:
+                continue
+            outputs.append([new_text, text_label, ap_terms, ap_categories])
 
     return outputs
 

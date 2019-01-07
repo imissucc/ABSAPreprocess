@@ -24,6 +24,7 @@ def aspect_term_replacement(text, aspect_terms):
         pos.append(t[2])
 
     # phs: [(aspect_place_holder, (from, to))...]
+    assert len(ph_terms) == len(ap_terms)
     new_text = replace_with_index(text, ph_terms, pos)
     ap_terms = ",".join(ap_terms)
 
@@ -62,7 +63,7 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
 
         else:
             if rm_none_aspect:
-                pass
+                continue
             else:
                 # don't have aspect terms
                 new_text = washer(text)
