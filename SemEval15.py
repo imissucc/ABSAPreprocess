@@ -27,7 +27,7 @@ class SemEval15Sentence:
 
     @opinions.setter
     def opinions(self, value):
-        assert isinstance(value, list)
+        # assert isinstance(value, list)
         self._opinions = value
 
 

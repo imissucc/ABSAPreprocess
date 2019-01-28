@@ -58,7 +58,7 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
             new_text, ap_terms = aspect_term_replacement(text, aspect_terms)
             new_text = washer(new_text)
             text_label = label_constructor(new_text)
-            ap_categories = aspect_category_constructor(aspect_categories)
+            ap_categories = aspect_category_constructor(aspect_categories) if aspect_categories is not None else None
             outputs.append([new_text, text_label, ap_terms, ap_categories])
 
         else:
@@ -77,11 +77,11 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
 
 if __name__ == "__main__":
 
-    name = "restaurants-trial"
-    datas = SE14_ATEDataPrepare(file="data/{}.xml".format(name),
+    name = "Laptop_Train_v2"
+    datas = SE14_ATEDataPrepare(file="datasets/SemEval2014/{}.xml".format(name),
                                 rm_none_aspect=True)
 
     # write to csv file
-    with codecs.open("data/{}.csv".format(name), "w", "utf-8") as f:
+    with codecs.open("resources/AspectTermExtraction/{}.csv".format(name), "w", "utf-8") as f:
         writer = csv.writer(f)
         writer.writerows(datas)
