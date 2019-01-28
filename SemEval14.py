@@ -74,14 +74,12 @@ class SemEval14Handler(xml.sax.ContentHandler):
         elif tag == "aspectTerm":
             # term data
             term = attributes["term"]
-            polarity = attributes["polarity"]
             fromto = (int(attributes["from"]), int(attributes["to"]))
-            self.aspect_terms.append((term, polarity, fromto))
+            self.aspect_terms.append((term, fromto))
         elif tag == "aspectCategory":
             # category data
             category = attributes["category"]
-            polarity = attributes["polarity"]
-            self.aspect_categories.append((category, polarity))
+            self.aspect_categories.append(category)
 
     def characters(self, content):
 

@@ -10,18 +10,18 @@ from SemEval14 import SemEval14XMLReader
 def aspect_term_replacement(text, aspect_terms):
 
     # text: str
-    # aspect_terms: [(aspect_term, polarity, (from, to))...]
+    # aspect_terms: [(aspect_term, (from, to))...]
     ph_terms = []
     ap_terms = []
     pos = []
     for t in aspect_terms:
-        # t: (aspect_term, polarity, (from, to))
+        # t: (aspect_term, (from, to))
         aspect_term = t[0]
         aspect_count = len(aspect_term.split())
         ph = aspect_term_placeholder(count=aspect_count) # "$BA$ $IA$"
         ph_terms.append(ph)
         ap_terms.append(aspect_term)
-        pos.append(t[2])
+        pos.append(t[1])
 
     # phs: [(aspect_place_holder, (from, to))...]
     assert len(ph_terms) == len(ap_terms)
@@ -33,8 +33,8 @@ def aspect_term_replacement(text, aspect_terms):
 
 def aspect_category_constructor(aspect_categories):
 
-    # aspect_categories: [(category, polarity)]
-    output = aspect_categories[0][0]
+    # aspect_categories: [category]
+    output = aspect_categories[0]
     category_size = len(aspect_categories)
     if category_size > 1:
         for i in range(1, category_size):
@@ -77,11 +77,19 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
 
 if __name__ == "__main__":
 
-    name = "Laptop_Train_v2"
-    datas = SE14_ATEDataPrepare(file="datasets/SemEval2014/{}.xml".format(name),
-                                rm_none_aspect=True)
+    file_name = {
+        "14restaurant_train": "datasets/SemEval2014/Restaurants_Train_v2.xml",
+        "14restaurant_test": "datasets/SemEval2014/ABSA_TestData_PhaseB/Restaurants_Test_Data_phaseB.xml",
+        "14laptop_train": "datasets/SemEval2014/Laptop_Train_v2.xml",
+        "14laptop_test": "datasets/SemEval2014/ABSA_TestData_PhaseB/Laptops_Test_Data_phaseB.xml"
+    }
 
-    # write to csv file
-    with codecs.open("resources/AspectTermExtraction/{}.csv".format(name), "w", "utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerows(datas)
+    for k, v in file_name.items():
+
+        datas = SE14_ATEDataPrepare(file=v,
+                                    rm_none_aspect=False)
+        print(len(datas))
+        # write to csv file
+        with codecs.open("resources/AspectTermExtraction/{}.csv".format(k), "w", "utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerows(datas)

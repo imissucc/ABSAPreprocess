@@ -68,11 +68,18 @@ def SE15_ATEDataPrepare(file, rm_none_aspect):
 
 if __name__ == "__main__":
 
-    name = "ABSA-15_Restaurants_Train_Final"
-    datas = SE15_ATEDataPrepare(file="datasets/SemEval2015/ABSA15_RestaurantsTrain/{}.xml".format(name),
-                                rm_none_aspect=True)
+    file_name = {
+        "15restaurant_train": "datasets/SemEval2015/ABSA15_RestaurantsTrain/ABSA-15_Restaurants_Train_Final.xml",
+        "15restaurant_test": "datasets/SemEval2015/ABSA15_Restaurants_Test.xml"
+    }
 
-    # write to csv file
-    with codecs.open("resources/AspectTermExtraction/{}.csv".format(name), "w", "utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerows(datas)
+    for k, v in file_name.items():
+
+        datas = SE15_ATEDataPrepare(file=v,
+                                    rm_none_aspect=False)
+
+        print(len(datas))
+        # write to csv file
+        with codecs.open("resources/AspectTermExtraction/{}.csv".format(k), "w", "utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerows(datas)
