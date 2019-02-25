@@ -1,4 +1,8 @@
 import xml.sax
+import csv
+import codecs
+
+from utils import *
 
 
 class SemEval15Sentence:
@@ -39,7 +43,6 @@ class SemEval15Review:
 
     @id.setter
     def id(self, value):
-        assert isinstance(value, str)
         self._id = value
 
     @property
@@ -48,7 +51,6 @@ class SemEval15Review:
 
     @sentences.setter
     def sentences(self, value):
-        assert isinstance(value, list)
         self._sentences = value
 
 class SemEval15Handler(xml.sax.ContentHandler):
@@ -125,8 +127,92 @@ def SemEval15XMLReader(file):
                                           Handler.datas[0].sentences[0].opinions)
     return Handler.datas, desc
 
-if __name__ == "__main__":
+def term_replacement(text, opinions):
 
-    datas, desc = SemEval15XMLReader("data/absa-2015_restaurants_trial.xml")
+    # text: str
+    # opinions: [(term, entity#attribute, polarity, (from, to))...]
 
-    print(desc)
+    placeholders = [] # place holder terms
+    ap_terms = [] # aspect terms
+    categories = [] # categories
+    positions = []
+
+    for t in opinions:
+        # t: (term, entity#attribute, polarity, (from, to))
+        aspect_term = t[0] # maybe == "NULL"
+        polarity = t[2]
+        if aspect_term != "NULL":
+            term_size = len(aspect_term.split())
+            # create place holder for every term
+            ph = placeholder_constructor(term_size, polarity)
+            placeholders.append(ph)
+            ap_terms.append(aspect_term)
+            positions.append(t[3])
+
+        categories.append(t[1])
+
+    # if aspect_terms is not None
+    assert len(placeholders) == len(ap_terms)
+
+    if len(placeholders) > 0:
+        text_ph = washer(replace_with_index(text=text,
+                                            placeholders=placeholders,
+                                            positions=positions))
+        ap_terms = ",".join(ap_terms)
+    else:
+        text_ph = washer(text)
+        ap_terms = None
+
+    if len(categories) > 0:
+        categories = ",".join(set(categories))
+    else:
+        categories = None
+
+    return text_ph, ap_terms, categories
+
+def SE15_ATEDataPrepare(file, rm_none_aspect=False):
+
+    datas, _ = SemEval15XMLReader(file=file)
+    # datas: [data/.id/.sentences:
+    #                   [sentence/.id/.text/.opinions]
+    #        ]
+    outputs = []
+
+    for data in datas:
+        for sentence in data.sentences:
+            text = sentence.text
+            opinions = sentence.opinions # [(term, entity#attribute, polarity, (from, to))]
+
+            # opinion is always exist
+            # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
+            text_ph, ap_terms, ap_categories = term_replacement(text, opinions)
+            label = label_constructor(text_ph)
+
+            # if ignore sentences without aspect
+            if rm_none_aspect and ap_terms is None:
+                continue
+            outputs.append([text_ph, label, ap_terms, ap_categories])
+
+    return outputs
+
+
+####################################################################################################################
+
+def SemEval2015_AspectTerm(file_name, rm_none_aspect=False):
+
+    for k, v in file_name.items():
+
+        datas = SE15_ATEDataPrepare(file=v,
+                                    rm_none_aspect=rm_none_aspect)
+
+        desc = ">>> {} \n" \
+               "\t- size: {} \n" \
+               "\t- sample: {} \n".format(k,
+                                          len(datas),
+                                          datas[0])
+
+        print(desc)
+        # write to csv file
+        # with codecs.open("resources/AspectTermExtraction/{}.csv".format(k), "w", "utf-8") as f:
+        #     writer = csv.writer(f)
+        #     writer.writerows(datas)

@@ -1,26 +1,34 @@
 import re
 
-def aspect_term_placeholder(count):
 
-    BA = "$BA$"
-    IA = "$IA$"
-    place_holder = BA
-    if count > 1:
-        for _ in range(count-1):
-            place_holder += " {}".format(IA)
+def placeholder_constructor(term_size, polarity):
 
-    return place_holder
+    POL = {
+        "positive": "POS",
+        "neutral": "NEU",
+        "negative": "NEG"
+    }
+    BA = "$B$"
+    IA = "$I$"
 
+    P = POL[polarity]  # "POS"
+    ph = "$B{}$".format(P)
+    iph = "$I{}$".format(P)
+    if term_size > 1:
+        for _ in range(term_size - 1):
+            ph += " {}".format(iph)  # "$B-POS$ $I-POS$"
 
-def replace_with_index(text, terms, positions):
+    return ph
+
+def replace_with_index(text, placeholders, positions):
 
     new_text = []
     last_end = 0
     for i in range(len(positions)):
         pos = positions[i]
-        term = terms[i]
+        ph = placeholders[i]
         new_text.append(text[last_end:pos[0]])
-        new_text.append(term)
+        new_text.append(ph)
         last_end = pos[1]
     new_text.append(text[last_end:])
 
@@ -48,13 +56,29 @@ def washer(string):
 def label_constructor(text):
 
     # text: text with aspect term place holder
-    labels = ("$BA$", "$IA$", "$BO$", "$IA$")
+    labels = ("$BPOS$","$BNEU$", "$BNEG$",
+              "$IPOS$","$INEU$", "$INEG$")
     words = text.split(" ")
     text_label = []
     for w in words:
         if w not in labels:
-            text_label.append("N")
+            text_label.append("O")
         else:
-            text_label.append(w[1:3])
+            text_label.append(w[1:-1])
 
     return " ".join(text_label)
+
+def placeholder_text_reverse(text_with_ph, aspect_terms):
+
+    text = text_with_ph
+    for term in aspect_terms:
+        t_size = len(term.split())
+        t_ph = "$B$"
+        if len(term.split()) > 1:
+            for _ in range(t_size - 1):
+                t_ph += " $I$"
+            text = text.replace(t_ph, term, 1)
+        else:
+            text = text.replace(t_ph, term, 1)
+
+    return text
