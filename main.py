@@ -5,7 +5,7 @@ if __name__ == "__main__":
 
     # Parameters
     # Construct datas for join extraction task or not
-    join = False
+    join = True
 
     # SemEval 2014
     se14_file_name = {

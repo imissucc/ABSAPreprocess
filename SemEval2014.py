@@ -209,6 +209,8 @@ def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
 ####################################################################################################################
 
 def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
+
+    type = "jte" if join else "ate"
     for k, v in file_name.items():
 
         datas = SE14_ATEDataPrepare(file=v,
@@ -220,7 +222,7 @@ def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
                                           len(datas),
                                           datas[0])
         print(desc)
-        # # write to csv file
-        # with codecs.open("resources/AspectTermExtraction/{}.csv".format(k), "w", "utf-8") as f:
-        #     writer = csv.writer(f)
-        #     writer.writerows(datas)
+        # write to csv file
+        with codecs.open("resources/AspectTermExtraction/{}-{}.csv".format(k, type), "w", "utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerows(datas)
