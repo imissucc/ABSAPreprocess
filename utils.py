@@ -1,7 +1,7 @@
 import re
 
 
-def placeholder_constructor(term_size, polarity):
+def placeholder_constructor(term_size, polarity, join=False):
 
     POL = {
         "positive": "POS",
@@ -11,12 +11,18 @@ def placeholder_constructor(term_size, polarity):
     BA = "$B$"
     IA = "$I$"
 
-    P = POL[polarity]  # "POS"
-    ph = "$B{}$".format(P)
-    iph = "$I{}$".format(P)
-    if term_size > 1:
-        for _ in range(term_size - 1):
-            ph += " {}".format(iph)  # "$B-POS$ $I-POS$"
+    if join:
+        P = POL[polarity]  # "POS"
+        ph = "$B{}$".format(P)
+        iph = "$I{}$".format(P)
+        if term_size > 1:
+            for _ in range(term_size - 1):
+                ph += " {}".format(iph)  # "$B-POS$ $I-POS$"
+    else:
+        ph = BA
+        if term_size > 1:
+            for _ in range(term_size - 1):
+                ph += " {}".format(IA) # "$B$ $I$"
 
     return ph
 
@@ -57,7 +63,8 @@ def label_constructor(text):
 
     # text: text with aspect term place holder
     labels = ("$BPOS$","$BNEU$", "$BNEG$",
-              "$IPOS$","$INEU$", "$INEG$")
+              "$IPOS$","$INEU$", "$INEG$",
+              "$B$", "$I$")
     words = text.split(" ")
     text_label = []
     for w in words:

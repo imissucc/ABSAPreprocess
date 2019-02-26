@@ -3,6 +3,10 @@ from SemEval2015 import SemEval2015_AspectTerm
 
 if __name__ == "__main__":
 
+    # Parameters
+    # Construct datas for join extraction task or not
+    join = False
+
     # SemEval 2014
     se14_file_name = {
         "14restaurant_train": "datasets/SemEval2014/Train/Restaurants_Train_v2.xml", # 3041
@@ -17,7 +21,7 @@ if __name__ == "__main__":
         "16restaurant_train": "datasets/SemEval2016/Train/ABSA16_Restaurants_train_SB1_v2.xml" # 2000
     }
 
-    SemEval2014_AspectTerm(file_name=se14_file_name, rm_none_aspect=False)
-    SemEval2015_AspectTerm(file_name=se15_file_name, rm_none_aspect=False)
-    SemEval2015_AspectTerm(file_name=se16_file_name, rm_none_aspect=False)
+    SemEval2014_AspectTerm(file_name=se14_file_name, join=join, rm_none_aspect=False)
+    SemEval2015_AspectTerm(file_name=se15_file_name, join=join, rm_none_aspect=False)
+    SemEval2015_AspectTerm(file_name=se16_file_name, join=join, rm_none_aspect=False)
 

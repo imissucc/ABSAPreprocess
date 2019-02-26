@@ -127,7 +127,7 @@ def SemEval14XMLReader(file):
     return Handler.datas, desc
 
 
-def term_replacement(text, aspect_terms):
+def term_replacement(text, aspect_terms, join=False):
 
     # text: str
     # aspect_terms: [(aspect_term, (from, to), polarity)...]
@@ -143,7 +143,7 @@ def term_replacement(text, aspect_terms):
         term_size = len(aspect_term.split())
 
         # create place holder for every term
-        ph = placeholder_constructor(term_size, polarity)
+        ph = placeholder_constructor(term_size, polarity, join=join)
         placeholders.append(ph)
         ap_terms.append(aspect_term)
         positions.append(t[1])
@@ -173,7 +173,7 @@ def aspect_category_constructor(categories):
 
     return output
 
-def SE14_ATEDataPrepare(file, rm_none_aspect=False):
+def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
 
     # file: data file path
     # rm_none_aspect: remove text without aspect terms
@@ -188,7 +188,7 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
 
         if aspect_terms is not None:
             # "All the $B-POS$ and $B-POS$ were fabulous, the $B-POS$ was mouth watering and the $B-POS$ was delicious!!!"
-            text_ph, ap_terms = term_replacement(text, aspect_terms)
+            text_ph, ap_terms = term_replacement(text, aspect_terms, join=join)
             label = label_constructor(text_ph) # "...$B-POS$ $I-POS$..."
             ap_categories = aspect_category_constructor(aspect_categories) if aspect_categories is not None else None
             outputs.append([text_ph, label, ap_terms, ap_categories])
@@ -208,10 +208,11 @@ def SE14_ATEDataPrepare(file, rm_none_aspect=False):
 
 ####################################################################################################################
 
-def SemEval2014_AspectTerm(file_name, rm_none_aspect=False):
+def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
     for k, v in file_name.items():
 
         datas = SE14_ATEDataPrepare(file=v,
+                                    join=join,
                                     rm_none_aspect=rm_none_aspect)
         desc = ">>> {} \n" \
                "\t- size: {} \n" \

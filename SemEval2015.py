@@ -127,7 +127,7 @@ def SemEval15XMLReader(file):
                                           Handler.datas[0].sentences[0].opinions)
     return Handler.datas, desc
 
-def term_replacement(text, opinions):
+def term_replacement(text, opinions, join=False):
 
     # text: str
     # opinions: [(term, entity#attribute, polarity, (from, to))...]
@@ -144,7 +144,7 @@ def term_replacement(text, opinions):
         if aspect_term != "NULL":
             term_size = len(aspect_term.split())
             # create place holder for every term
-            ph = placeholder_constructor(term_size, polarity)
+            ph = placeholder_constructor(term_size, polarity, join=join)
             placeholders.append(ph)
             ap_terms.append(aspect_term)
             positions.append(t[3])
@@ -170,7 +170,7 @@ def term_replacement(text, opinions):
 
     return text_ph, ap_terms, categories
 
-def SE15_ATEDataPrepare(file, rm_none_aspect=False):
+def SE15_ATEDataPrepare(file, join, rm_none_aspect=False):
 
     datas, _ = SemEval15XMLReader(file=file)
     # datas: [data/.id/.sentences:
@@ -185,7 +185,7 @@ def SE15_ATEDataPrepare(file, rm_none_aspect=False):
 
             # opinion is always exist
             # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
-            text_ph, ap_terms, ap_categories = term_replacement(text, opinions)
+            text_ph, ap_terms, ap_categories = term_replacement(text, opinions, join=join)
             label = label_constructor(text_ph)
 
             # if ignore sentences without aspect
@@ -198,11 +198,12 @@ def SE15_ATEDataPrepare(file, rm_none_aspect=False):
 
 ####################################################################################################################
 
-def SemEval2015_AspectTerm(file_name, rm_none_aspect=False):
+def SemEval2015_AspectTerm(file_name, join, rm_none_aspect=False):
 
     for k, v in file_name.items():
 
         datas = SE15_ATEDataPrepare(file=v,
+                                    join=join,
                                     rm_none_aspect=rm_none_aspect)
 
         desc = ">>> {} \n" \
