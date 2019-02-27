@@ -135,11 +135,12 @@ def term_replacement(text, opinions, join=False):
     placeholders = [] # place holder terms
     ap_terms = [] # aspect terms
     categories = [] # categories
-    positions = []
+    ap_map = {}  # dict[position] = (aspect_term, placeholder)
 
     for t in opinions:
         # t: (term, entity#attribute, polarity, (from, to))
         aspect_term = t[0] # maybe == "NULL"
+        position = t[3]
         polarity = t[2]
         if aspect_term != "NULL":
             term_size = len(aspect_term.split())
@@ -147,20 +148,24 @@ def term_replacement(text, opinions, join=False):
             ph = placeholder_constructor(term_size, polarity, join=join)
             placeholders.append(ph)
             ap_terms.append(aspect_term)
-            positions.append(t[3])
+            ap_map[position] = (aspect_term, ph)
 
         categories.append(t[1])
+
+    ap_sorted = dict(sorted(ap_map.items(), key=lambda i: i[0][0]))
 
     # if aspect_terms is not None
     assert len(placeholders) == len(ap_terms)
 
     if len(placeholders) > 0:
-        text_ph = washer(replace_with_index(text=text,
-                                            placeholders=placeholders,
-                                            positions=positions))
+        text_ph = replace_with_index(text=text,
+                                     aspect_map=ap_sorted)
+        text_ph = washer(text_ph) # "...$B-POS$ $I-POS$..."
+        text = placeholder_reverse(text_ph=text_ph,
+                                   aspect_map=ap_map)
         ap_terms = ",".join(ap_terms)
-    else:
-        text_ph = washer(text)
+    else: # text without aspect term
+        text_ph = text = washer(text)
         ap_terms = None
 
     if len(categories) > 0:
@@ -168,7 +173,7 @@ def term_replacement(text, opinions, join=False):
     else:
         categories = None
 
-    return text_ph, ap_terms, categories
+    return text, text_ph, ap_terms, categories
 
 def SE15_ATEDataPrepare(file, join, rm_none_aspect=False):
 
@@ -185,13 +190,13 @@ def SE15_ATEDataPrepare(file, join, rm_none_aspect=False):
 
             # opinion is always exist
             # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
-            text_ph, ap_terms, ap_categories = term_replacement(text, opinions, join=join)
+            text, text_ph, ap_terms, ap_categories = term_replacement(text, opinions, join=join)
             label = label_constructor(text_ph)
 
             # if ignore sentences without aspect
             if rm_none_aspect and ap_terms is None:
                 continue
-            outputs.append([text_ph, label, ap_terms, ap_categories])
+            outputs.append([text, label, ap_terms, ap_categories])
 
     return outputs
 
@@ -208,10 +213,20 @@ def SemEval2015_AspectTerm(file_name, join, rm_none_aspect=False):
                                     join=join,
                                     rm_none_aspect=rm_none_aspect)
 
+        origin_size = len(datas)
+        pop_list = verifier(datas=datas)
+
+        for i in pop_list:
+            datas.pop(i)
+
         desc = ">>> {} \n" \
-               "\t- size: {} \n" \
+               "\t- origin size: {} \n" \
+               "\t- verified size: {} \n" \
+               "\t- pop count: {} \n" \
                "\t- sample: {} \n".format(k,
+                                          origin_size,
                                           len(datas),
+                                          len(pop_list),
                                           datas[0])
 
         print(desc)

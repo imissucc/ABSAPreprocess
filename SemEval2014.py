@@ -134,11 +134,12 @@ def term_replacement(text, aspect_terms, join=False):
 
     placeholders = [] # [str]
     ap_terms = [] # [str]
-    positions = [] # [(from, to)]
+    ap_map = {} # dict[position] = (aspect_term, placeholder)
 
     for t in aspect_terms: # aspect terms inside one text
         # t: (aspect_term, (from, to), polarity)
         aspect_term = t[0]
+        position = t[1]
         polarity = t[2]
         term_size = len(aspect_term.split())
 
@@ -146,20 +147,22 @@ def term_replacement(text, aspect_terms, join=False):
         ph = placeholder_constructor(term_size, polarity, join=join)
         placeholders.append(ph)
         ap_terms.append(aspect_term)
-        positions.append(t[1])
+        ap_map[position] = (aspect_term, ph)
 
-    assert len(placeholders) == len(ap_terms)
+    ap_sorted = dict(sorted(ap_map.items(), key=lambda i: i[0][0]))
 
     if len(placeholders) > 0:
-        text_ph = washer(replace_with_index(text=text,
-                                             placeholders=placeholders,
-                                             positions=positions)) # "...$B-POS$ $I-POS$..."
+        text_ph = replace_with_index(text=text,
+                                     aspect_map=ap_sorted)
+        text_ph = washer(text_ph) # "...$B-POS$ $I-POS$..."
+        text = placeholder_reverse(text_ph=text_ph,
+                                   aspect_map=ap_map)
         ap_terms = ",".join(ap_terms)
     else:
-        text_ph = washer(text)
+        text_ph = text = washer(text)
         ap_terms = None
 
-    return text_ph, ap_terms
+    return text, text_ph, ap_terms
 
 def aspect_category_constructor(categories):
 
@@ -188,10 +191,10 @@ def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
 
         if aspect_terms is not None:
             # "All the $B-POS$ and $B-POS$ were fabulous, the $B-POS$ was mouth watering and the $B-POS$ was delicious!!!"
-            text_ph, ap_terms = term_replacement(text, aspect_terms, join=join)
+            text, text_ph, ap_terms = term_replacement(text, aspect_terms, join=join)
             label = label_constructor(text_ph) # "...$B-POS$ $I-POS$..."
             ap_categories = aspect_category_constructor(aspect_categories) if aspect_categories is not None else None
-            outputs.append([text_ph, label, ap_terms, ap_categories])
+            outputs.append([text, label, ap_terms, ap_categories])
 
         else:
             if rm_none_aspect:
@@ -216,10 +219,20 @@ def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
         datas = SE14_ATEDataPrepare(file=v,
                                     join=join,
                                     rm_none_aspect=rm_none_aspect)
+        origin_size = len(datas)
+        pop_list = verifier(datas=datas)
+
+        for i in pop_list:
+            datas.pop(i)
+
         desc = ">>> {} \n" \
-               "\t- size: {} \n" \
+               "\t- origin size: {} \n" \
+               "\t- verified size: {} \n" \
+               "\t- pop count: {} \n" \
                "\t- sample: {} \n".format(k,
+                                          origin_size,
                                           len(datas),
+                                          len(pop_list),
                                           datas[0])
         print(desc)
         # write to csv file

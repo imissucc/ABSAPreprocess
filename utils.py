@@ -1,4 +1,6 @@
 import re
+import csv
+import codecs
 
 
 def placeholder_constructor(term_size, polarity, join=False):
@@ -26,19 +28,22 @@ def placeholder_constructor(term_size, polarity, join=False):
 
     return ph
 
-def replace_with_index(text, placeholders, positions):
+def replace_with_index(text, aspect_map):
 
-    new_text = []
+    # text: str
+    # aspect_map: dict[position] = (aspect_term, placeholder)
+
+    text_ph = []
     last_end = 0
-    for i in range(len(positions)):
-        pos = positions[i]
-        ph = placeholders[i]
-        new_text.append(text[last_end:pos[0]])
-        new_text.append(ph)
+    # positions should sort
+    for pos, (_, ph) in aspect_map.items():
+        text_ph.append(text[last_end:pos[0]])
+        text_ph.append(ph)
         last_end = pos[1]
-    new_text.append(text[last_end:])
+    text_ph.append(text[last_end:])
+    text_ph = "".join(text_ph)
 
-    return "".join(new_text)
+    return text_ph
 
 
 def washer(string):
@@ -75,17 +80,47 @@ def label_constructor(text):
 
     return " ".join(text_label)
 
-def placeholder_text_reverse(text_with_ph, aspect_terms):
+def verifier(datas):
+    pops = []
 
-    text = text_with_ph
-    for term in aspect_terms:
-        t_size = len(term.split())
-        t_ph = "$B$"
-        if len(term.split()) > 1:
-            for _ in range(t_size - 1):
-                t_ph += " $I$"
-            text = text.replace(t_ph, term, 1)
+    for i in range(len(datas)):
+        text = datas[i][0].split()
+        label = datas[i][1].split()
+        if len(text) != len(label):
+            print("[WARN] ABNORMAL DATA: {}".format(datas[i]))
+            pops.append(i)
+
+    return pops
+
+def placeholder_reverse(text_ph, aspect_map):
+
+    # text_ph: str
+    # aspect_map: dict[position] = (aspect_term, placeholder)
+
+    ph_list = ["$BPOS$", "$BNEU$", "$BNEG$",
+               "$IPOS$", "$INEU$", "$INEG$",
+               "$B$", "$I$"]
+    terms = list(aspect_map.values()) # list[(aspect_term, placeholder)]
+    text_ph = text_ph.split()
+    term_size = len(terms)
+
+    term_id = 0
+    t_id = 0
+    for i in range(len(text_ph)):
+        w = text_ph[i] # word in text_ph
+        t = terms[term_id][0].split()
+        t_size = len(t)
+        if w not in ph_list:
+            continue
+        # w in ph_list
+        text_ph[i] = t[t_id] # replacement
+        if t_id < t_size-1:
+            t_id += 1
         else:
-            text = text.replace(t_ph, term, 1)
+            t_id = 0 # reset
+            if term_id < term_size-1:
+                term_id += 1
+            else:
+                break
 
-    return text
+    return " ".join(text_ph)

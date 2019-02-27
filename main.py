@@ -1,5 +1,6 @@
 from SemEval2014 import SemEval2014_AspectTerm
 from SemEval2015 import SemEval2015_AspectTerm
+from utils import verifier
 
 if __name__ == "__main__":
 
@@ -24,4 +25,5 @@ if __name__ == "__main__":
     SemEval2014_AspectTerm(file_name=se14_file_name, join=join, rm_none_aspect=False)
     SemEval2015_AspectTerm(file_name=se15_file_name, join=join, rm_none_aspect=False)
     SemEval2015_AspectTerm(file_name=se16_file_name, join=join, rm_none_aspect=False)
+
 
