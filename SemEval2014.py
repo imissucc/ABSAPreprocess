@@ -56,7 +56,6 @@ class SemEval14Handler(xml.sax.ContentHandler):
         self.id = None
         self.text = None
         self.aspect_terms = None
-        self.aspect_categories = None
         self.datas = []
 
     def startElement(self, tag, attributes):
@@ -64,10 +63,7 @@ class SemEval14Handler(xml.sax.ContentHandler):
         self.CurrentTag = tag
         if tag == "aspectTerms":
             # reset
-            self.aspect_terms = []
-        elif tag == "aspectCategories":
-            # reset
-            self.aspect_categories = []
+            self.aspect_terms = {}
         elif tag == "sentence":
             # reset data instance
             self.data = SemEval14Data()
@@ -75,14 +71,16 @@ class SemEval14Handler(xml.sax.ContentHandler):
         elif tag == "aspectTerm":
             # term data
             term = attributes["term"]
-            fromto = (int(attributes["from"]), int(attributes["to"]))
+            position = (int(attributes["from"]), int(attributes["to"]))
             polarity = attributes["polarity"]
-            if polarity != "conflict": # remove conflict aspect from corpus
-                self.aspect_terms.append((term, fromto, polarity))
-        elif tag == "aspectCategory":
-            # category data
-            category = attributes["category"]
-            self.aspect_categories.append(category)
+
+            if position not in self.aspect_terms.keys():
+                self.aspect_terms[position] = (term, polarity)
+            else:
+                # when the aspect_position is exists in opinions dictionary
+                _polarity_exist = self.aspect_terms[position][1]
+                _polarity = polarity_addition(_polarity_exist, polarity)
+                self.aspect_terms[position] = (term, polarity)
 
     def characters(self, content):
 
@@ -97,12 +95,10 @@ class SemEval14Handler(xml.sax.ContentHandler):
         elif tag == "text":
             self.data.text = self.text
         elif tag == "aspectTerms":
-            if self.aspect_terms is None or len(self.aspect_terms) != 0:
+            if self.aspect_terms is None or len(self.aspect_terms) > 0:
                 self.data.aspect_terms = self.aspect_terms
             else: # is not None and len=0
                 self.data.aspect_terms = None
-        elif tag == "aspectCategories":
-            self.data.aspect_categories = self.aspect_categories
 
 
 def SemEval14XMLReader(file):
@@ -130,17 +126,14 @@ def SemEval14XMLReader(file):
 def term_replacement(text, aspect_terms, join=False):
 
     # text: str
-    # aspect_terms: [(aspect_term, (from, to), polarity)...]
+    # aspect_terms: dict[(from, to)] = (term, polarity)
 
     placeholders = [] # [str]
     ap_terms = [] # [str]
     ap_map = {} # dict[position] = (aspect_term, placeholder)
 
-    for t in aspect_terms: # aspect terms inside one text
-        # t: (aspect_term, (from, to), polarity)
-        aspect_term = t[0]
-        position = t[1]
-        polarity = t[2]
+    for position, (aspect_term, polarity) in aspect_terms.items():
+        # aspect terms inside one text
         term_size = len(aspect_term.split())
 
         # create place holder for every term
@@ -156,7 +149,7 @@ def term_replacement(text, aspect_terms, join=False):
                                      aspect_map=ap_sorted)
         text_ph = washer(text_ph) # "...$B-POS$ $I-POS$..."
         text = placeholder_reverse(text_ph=text_ph,
-                                   aspect_map=ap_map)
+                                   aspect_map=ap_sorted)
         ap_terms = ",".join(ap_terms)
     else:
         text_ph = text = washer(text)
@@ -176,7 +169,7 @@ def aspect_category_constructor(categories):
 
     return output
 
-def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
+def SE14_ATEDataPrepare(file, join, rm_none_aspect=False, rm_conflicts=False):
 
     # file: data file path
     # rm_none_aspect: remove text without aspect terms
@@ -186,15 +179,25 @@ def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
     outputs = []
     for data in datas:
         text = data.text
-        aspect_terms = data.aspect_terms
-        aspect_categories = data.aspect_categories
+        aspect_terms = data.aspect_terms # dict[(from, to)] = (term, polarity)
 
         if aspect_terms is not None:
+            conflict_keys = []
+            if rm_conflicts:
+                for key, (_, polarity) in aspect_terms.items():
+                    if polarity == "conflict":
+                        conflict_keys.append(key)
+                for k in conflict_keys:
+                    aspect_terms.pop(k)
+                if len(aspect_terms) == 0:
+                    aspect_terms = None
+
+        if aspect_terms is not None :
             # "All the $B-POS$ and $B-POS$ were fabulous, the $B-POS$ was mouth watering and the $B-POS$ was delicious!!!"
+
             text, text_ph, ap_terms = term_replacement(text, aspect_terms, join=join)
             label = label_constructor(text_ph) # "...$B-POS$ $I-POS$..."
-            ap_categories = aspect_category_constructor(aspect_categories) if aspect_categories is not None else None
-            outputs.append([text, label, ap_terms, ap_categories])
+            outputs.append([text, label, ap_terms])
 
         else:
             if rm_none_aspect:
@@ -204,26 +207,25 @@ def SE14_ATEDataPrepare(file, join, rm_none_aspect=False):
                 new_text = washer(text)
                 text_label = label_constructor(new_text)
                 ap_terms = None
-                ap_categories = None
-                outputs.append([new_text, text_label, ap_terms, ap_categories])
+                outputs.append([new_text, text_label, ap_terms])
 
     return outputs
 
 ####################################################################################################################
 
-def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
+def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False, rm_conflicts=False):
 
     type = "jte" if join else "ate"
+    con = "rc" if rm_conflicts else "nrc"
+
     for k, v in file_name.items():
 
         datas = SE14_ATEDataPrepare(file=v,
                                     join=join,
-                                    rm_none_aspect=rm_none_aspect)
+                                    rm_none_aspect=rm_none_aspect,
+                                    rm_conflicts=rm_conflicts)
         origin_size = len(datas)
-        pop_list = verifier(datas=datas)
-
-        for i in pop_list:
-            datas.pop(i)
+        datas, failed_count = verifier(datas=datas)
 
         desc = ">>> {} \n" \
                "\t- origin size: {} \n" \
@@ -232,10 +234,10 @@ def SemEval2014_AspectTerm(file_name, join, rm_none_aspect=False):
                "\t- sample: {} \n".format(k,
                                           origin_size,
                                           len(datas),
-                                          len(pop_list),
+                                          failed_count,
                                           datas[0])
         print(desc)
         # write to csv file
-        with codecs.open("resources/AspectTermExtraction/{}-{}.csv".format(k, type), "w", "utf-8") as f:
+        with codecs.open("resources/AspectTermExtraction/{}-{}-{}.csv".format(k, type, con), "w", "utf-8") as f:
             writer = csv.writer(f)
             writer.writerows(datas)

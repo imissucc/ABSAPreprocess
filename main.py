@@ -6,7 +6,9 @@ if __name__ == "__main__":
 
     # Parameters
     # Construct datas for join extraction task or not
-    join = True
+    join = True # join term or aspect term
+    asp = False # remove non-aspect review or not
+    con = True # remove conflict term or not
 
     # SemEval 2014
     se14_file_name = {
@@ -22,8 +24,8 @@ if __name__ == "__main__":
         "16restaurant_train": "datasets/SemEval2016/Train/ABSA16_Restaurants_train_SB1_v2.xml" # 2000
     }
 
-    SemEval2014_AspectTerm(file_name=se14_file_name, join=join, rm_none_aspect=False)
-    SemEval2015_AspectTerm(file_name=se15_file_name, join=join, rm_none_aspect=False)
-    SemEval2015_AspectTerm(file_name=se16_file_name, join=join, rm_none_aspect=False)
+    SemEval2014_AspectTerm(file_name=se14_file_name, join=join, rm_none_aspect=asp, rm_conflicts=con)
+    SemEval2015_AspectTerm(file_name=se15_file_name, join=join, rm_none_aspect=asp, rm_conflicts=con)
+    SemEval2015_AspectTerm(file_name=se16_file_name, join=join, rm_none_aspect=asp, rm_conflicts=con)
 
 

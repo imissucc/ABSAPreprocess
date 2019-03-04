@@ -3,20 +3,35 @@ import csv
 import codecs
 
 
+def polarity_addition(pol1, pol2):
+    # neutral + * = *
+    # * + * = *
+    # *1 + *2 = conflict
+
+    if pol1 == "neutral":
+        return pol2
+    else:
+        if pol2 == "neutral" or pol2 == pol1:
+            return pol1
+        elif pol2 != pol1:
+            return "conflict"
+
+
 def placeholder_constructor(term_size, polarity, join=False):
 
     POL = {
         "positive": "POS",
         "neutral": "NEU",
-        "negative": "NEG"
+        "negative": "NEG",
+        "conflict": "CON"
     }
     BA = "$B$"
     IA = "$I$"
 
     if join:
         P = POL[polarity]  # "POS"
-        ph = "$B{}$".format(P)
-        iph = "$I{}$".format(P)
+        ph = "$B-{}$".format(P)
+        iph = "$I-{}$".format(P)
         if term_size > 1:
             for _ in range(term_size - 1):
                 ph += " {}".format(iph)  # "$B-POS$ $I-POS$"
@@ -51,11 +66,21 @@ def washer(string):
     # remove digits
     string = re.sub(r'\d+', " ", string)
     # retain only alphabets and digits
-    string = re.sub(r"[^A-Za-z$\']", " ", string)
-    # dollar
-    string = re.sub(r"\s\$\s", " ", string)
-    string = re.sub(r"\s\$$", "", string)
-    string = re.sub(r"^\$\s", "", string)
+    string = re.sub(r"[^A-Za-z$\'-]", " ", string)
+    # punctuation
+    string = re.sub(r"\'\$", "\' $", string) # seperate ' and $
+    string = re.sub(r"\$\'", "$ \'", string) # seperate $ and '
+    string = re.sub(r"-\$", "- $", string)  # seperate - and $
+    string = re.sub(r"\$-", "$ -", string)  # seperate $ and -
+    string = re.sub(r"\$\$", "$ $", string) # seperate $ and $
+    string = re.sub(r"\s\'\s", " ", string) # remove single '
+    string = re.sub(r"\s\'\s", " ", string) # same as the last line
+    string = re.sub(r"\s\$\s", " ", string) # remove single $
+    string = re.sub(r"\s\$\s", " ", string) # same as the last line
+    string = re.sub(r"\s-\s", " ", string)  # remove single -
+    string = re.sub(r"\s-\s", " ", string)  # same as the last line
+    string = re.sub(r"\s\$$", "", string) # single $ at the end of sentence
+    string = re.sub(r"^\$\s", "", string) # single $ at the begin of sentence
     # multi space
     string = re.sub(r"\s{2,}", " ", string)
     # remove space from start and end
@@ -67,8 +92,8 @@ def washer(string):
 def label_constructor(text):
 
     # text: text with aspect term place holder
-    labels = ("$BPOS$","$BNEU$", "$BNEG$",
-              "$IPOS$","$INEU$", "$INEG$",
+    labels = ("$B-POS$","$B-NEU$", "$B-NEG$", "$B-CON$",
+              "$I-POS$","$I-NEU$", "$I-NEG$", "$I-CON$",
               "$B$", "$I$")
     words = text.split(" ")
     text_label = []
@@ -81,24 +106,29 @@ def label_constructor(text):
     return " ".join(text_label)
 
 def verifier(datas):
-    pops = []
+
+    verified = []
+    failed_count = 0
 
     for i in range(len(datas)):
         text = datas[i][0].split()
         label = datas[i][1].split()
         if len(text) != len(label):
-            print("[WARN] ABNORMAL DATA: {}".format(datas[i]))
-            pops.append(i)
+            print("[WARN] DROPED DATA: {}".format(datas[i]))
+            failed_count += 1
+        else:
+            verified.append(datas[i])
 
-    return pops
+    return verified, failed_count
+
 
 def placeholder_reverse(text_ph, aspect_map):
 
     # text_ph: str
     # aspect_map: dict[position] = (aspect_term, placeholder)
 
-    ph_list = ["$BPOS$", "$BNEU$", "$BNEG$",
-               "$IPOS$", "$INEU$", "$INEG$",
+    ph_list = ["$B-POS$", "$B-NEU$", "$B-NEG$", "$B-CON$",
+               "$I-POS$", "$I-NEU$", "$I-NEG$", "$I-CON$",
                "$B$", "$I$"]
     terms = list(aspect_map.values()) # list[(aspect_term, placeholder)]
     text_ph = text_ph.split()

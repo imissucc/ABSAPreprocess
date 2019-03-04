@@ -53,31 +53,31 @@ A simple way for ABSA(Aspect Base Sentiment Analysis) research data preprocessin
 	- origin size: 3041
 	- verified size: 3041
 	- pop count: 0
-	- sample: ['But the staff was so horrible to us', 'O O BNEG O O O O O', 'staff', 'service']
+	- sample: ['But the staff was so horrible to us', 'O O B-NEG O O O O O', 'staff']
 
 >>> 14laptop_train
 	- origin size: 3045
 	- verified size: 3045
 	- pop count: 0
-	- sample: ['I charge it at night and skip taking the cord with me because of the good battery life', 'O O O O O O O O O BNEU O O O O O O BPOS IPOS', 'cord,battery life', None]
+	- sample: ['I charge it at night and skip taking the cord with me because of the good battery life', 'O O O O O O O O O B-NEU O O O O O O B-POS I-POS', 'cord,battery life']
 
-[WARN] ABNORMAL DATA: ['', 'O', None, 'RESTAURANT#GENERAL']
+[WARN] DROPED DATA: ['', 'O', None]
 >>> 15restaurant_train
 	- origin size: 1315
 	- verified size: 1314
 	- pop count: 1
-	- sample: ['Judging from previous posts this used to be a good place but not any longer', 'O O O O O O O O O O BNEG O O O O', 'place', 'RESTAURANT#GENERAL']
+	- sample: ['Judging from previous posts this used to be a good place but not any longer', 'O O O O O O O O O O B-NEG O O O O', 'place']
 
 >>> 15restaurant_test
 	- origin size: 685
 	- verified size: 685
 	- pop count: 0
-	- sample: ['Love Al Di La', 'O BPOS IPOS IPOS', 'Al Di La', 'RESTAURANT#GENERAL']
+	- sample: ['Love Al Di La', 'O B-POS I-POS I-POS', 'Al Di La']
 
-[WARN] ABNORMAL DATA: ['', 'O', None, 'RESTAURANT#GENERAL']
+[WARN] DROPED DATA: ['', 'O', None]
 >>> 16restaurant_train
 	- origin size: 2000
 	- verified size: 1999
 	- pop count: 1
-	- sample: ['Judging from previous posts this used to be a good place but not any longer', 'O O O O O O O O O O BNEG O O O O', 'place', 'RESTAURANT#GENERAL'] 
+	- sample: ['Judging from previous posts this used to be a good place but not any longer', 'O O O O O O O O O O B-NEG O O O O', 'place'] 
 ```

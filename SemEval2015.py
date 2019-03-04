@@ -78,11 +78,20 @@ class SemEval15Handler(xml.sax.ContentHandler):
             self.sentences = []
         elif tag == "sentence":
             self.sentence = SemEval15Sentence()
+            self.opinions = {} # dict[(from, to)] = (target, polarity)
             self.sid = attributes["id"]
-        elif tag == "Opinions":
-            self.opinions = []
         elif tag == "Opinion":
-            self.opinions.append((attributes["target"], attributes["category"], attributes["polarity"], (int(attributes["from"]), int(attributes["to"]))))
+            _position = (int(attributes["from"]), int(attributes["to"]))
+            _target = attributes["target"]
+            _polarity = attributes["polarity"]
+            if _target != "NULL" and _position != (0, 0):
+                if _position not in self.opinions.keys():
+                    self.opinions[_position] = (_target, _polarity)
+                else:
+                    # when the aspect_position is exists in opinions dictionary
+                    _polarity_exist = self.opinions[_position][1]
+                    _polarity = polarity_addition(_polarity_exist, _polarity)
+                    self.opinions[_position] = (_target, _polarity)
 
     def characters(self, content):
 
@@ -95,7 +104,7 @@ class SemEval15Handler(xml.sax.ContentHandler):
             self.sentence.text = self.text
         elif tag == "sentence":
             self.sentence.id = self.sid
-            self.sentence.opinions = self.opinions
+            self.sentence.opinions = dict(sorted(self.opinions.items(), key=lambda i: i[0][0])) # dict[(from, to)] = (target, polarity)
             self.sentences.append(self.sentence)
         elif tag == "Review":
             self.review.sentences = self.sentences
@@ -130,18 +139,15 @@ def SemEval15XMLReader(file):
 def term_replacement(text, opinions, join=False):
 
     # text: str
-    # opinions: [(term, entity#attribute, polarity, (from, to))...]
+    # opinions: dict[(from, to)] = (target, polarity)
 
     placeholders = [] # place holder terms
     ap_terms = [] # aspect terms
     categories = [] # categories
     ap_map = {}  # dict[position] = (aspect_term, placeholder)
 
-    for t in opinions:
-        # t: (term, entity#attribute, polarity, (from, to))
-        aspect_term = t[0] # maybe == "NULL"
-        position = t[3]
-        polarity = t[2]
+    for position, (aspect_term, polarity) in opinions.items():
+        # dict[(from, to)] = (aspect_term, polarity)
         if aspect_term != "NULL":
             term_size = len(aspect_term.split())
             # create place holder for every term
@@ -149,8 +155,6 @@ def term_replacement(text, opinions, join=False):
             placeholders.append(ph)
             ap_terms.append(aspect_term)
             ap_map[position] = (aspect_term, ph)
-
-        categories.append(t[1])
 
     ap_sorted = dict(sorted(ap_map.items(), key=lambda i: i[0][0]))
 
@@ -162,20 +166,15 @@ def term_replacement(text, opinions, join=False):
                                      aspect_map=ap_sorted)
         text_ph = washer(text_ph) # "...$B-POS$ $I-POS$..."
         text = placeholder_reverse(text_ph=text_ph,
-                                   aspect_map=ap_map)
+                                   aspect_map=ap_sorted)
         ap_terms = ",".join(ap_terms)
     else: # text without aspect term
         text_ph = text = washer(text)
         ap_terms = None
 
-    if len(categories) > 0:
-        categories = ",".join(set(categories))
-    else:
-        categories = None
+    return text, text_ph, ap_terms
 
-    return text, text_ph, ap_terms, categories
-
-def SE15_ATEDataPrepare(file, join, rm_none_aspect=False):
+def SE15_ATEDataPrepare(file, join, rm_none_aspect=False, rm_conflicts=False):
 
     datas, _ = SemEval15XMLReader(file=file)
     # datas: [data/.id/.sentences:
@@ -188,36 +187,43 @@ def SE15_ATEDataPrepare(file, join, rm_none_aspect=False):
             text = sentence.text
             opinions = sentence.opinions # [(term, entity#attribute, polarity, (from, to))]
 
+            conflict_keys = []
+            if rm_conflicts:
+                for key, (_, polarity) in opinions.items():
+                    if polarity == "conflict":
+                        conflict_keys.append(key)
+                for k in conflict_keys:
+                    opinions.pop(k)
+
             # opinion is always exist
             # "All the $BA$ and $BA$ were fabulous, the $BA$ was mouth watering and the $BA$ was delicious!!!"
-            text, text_ph, ap_terms, ap_categories = term_replacement(text, opinions, join=join)
+            text, text_ph, ap_terms = term_replacement(text, opinions, join=join)
             label = label_constructor(text_ph)
 
             # if ignore sentences without aspect
             if rm_none_aspect and ap_terms is None:
                 continue
-            outputs.append([text, label, ap_terms, ap_categories])
+            outputs.append([text, label, ap_terms])
 
     return outputs
 
 
 ####################################################################################################################
 
-def SemEval2015_AspectTerm(file_name, join, rm_none_aspect=False):
+def SemEval2015_AspectTerm(file_name, join, rm_none_aspect=False, rm_conflicts=False):
 
     type = "jte" if join else "ate"
+    con = "rc" if rm_conflicts else "nrc"
 
     for k, v in file_name.items():
 
         datas = SE15_ATEDataPrepare(file=v,
                                     join=join,
-                                    rm_none_aspect=rm_none_aspect)
+                                    rm_none_aspect=rm_none_aspect,
+                                    rm_conflicts=rm_conflicts)
 
         origin_size = len(datas)
-        pop_list = verifier(datas=datas)
-
-        for i in pop_list:
-            datas.pop(i)
+        datas, failed_count = verifier(datas=datas)
 
         desc = ">>> {} \n" \
                "\t- origin size: {} \n" \
@@ -226,11 +232,11 @@ def SemEval2015_AspectTerm(file_name, join, rm_none_aspect=False):
                "\t- sample: {} \n".format(k,
                                           origin_size,
                                           len(datas),
-                                          len(pop_list),
+                                          failed_count,
                                           datas[0])
 
         print(desc)
         # write to csv file
-        with codecs.open("resources/AspectTermExtraction/{}-{}.csv".format(k, type), "w", "utf-8") as f:
+        with codecs.open("resources/AspectTermExtraction/{}-{}-{}.csv".format(k, type, con), "w", "utf-8") as f:
             writer = csv.writer(f)
             writer.writerows(datas)
